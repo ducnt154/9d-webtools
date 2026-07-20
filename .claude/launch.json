@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "9d-web-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "cwd": "/Users/duc.nguyen/Documents/Tepaylink/9D/9d-web",
+      "port": 4909
+    }
+  ]
+}

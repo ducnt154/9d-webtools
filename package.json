@@ -1,0 +1,12 @@
+{
+  "name": "9d-cicd",
+  "version": "1.0.0",
+  "description": "Unit test dashboard for 9d-mobile — run & monitor doctest unit tests",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

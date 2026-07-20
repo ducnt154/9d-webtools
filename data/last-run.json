@@ -1,0 +1,184 @@
+{
+  "unit": {
+    "tests": [
+      {
+        "name": "[LOGIN] đúng tài khoản",
+        "status": "passed",
+        "durationMs": 24,
+        "finishedAt": "2026-07-20T14:59:46.947Z",
+        "detail": null
+      },
+      {
+        "name": "[LOGIN] sai tài khoản",
+        "status": "passed",
+        "durationMs": 26,
+        "finishedAt": "2026-07-20T14:59:46.992Z",
+        "detail": null
+      },
+      {
+        "name": "[LOGIN] input rỗng",
+        "status": "passed",
+        "durationMs": 25,
+        "finishedAt": "2026-07-20T14:59:47.038Z",
+        "detail": null
+      },
+      {
+        "name": "[LOGIN] network thất bại",
+        "status": "passed",
+        "durationMs": 23,
+        "finishedAt": "2026-07-20T14:59:47.082Z",
+        "detail": null
+      }
+    ],
+    "summary": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0
+    },
+    "startedAt": "2026-07-20T14:59:45.930Z",
+    "finishedAt": "2026-07-20T14:59:47.083Z",
+    "exitCode": 0,
+    "history": [
+      {
+        "startedAt": "2026-07-20T14:59:45.930Z",
+        "finishedAt": "2026-07-20T14:59:47.083Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "startedAt": "2026-07-17T17:20:34.299Z",
+        "finishedAt": "2026-07-17T17:20:34.730Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "startedAt": "2026-07-17T00:55:49.372Z",
+        "finishedAt": "2026-07-17T00:55:50.117Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "startedAt": "2026-07-17T00:26:49.167Z",
+        "finishedAt": "2026-07-17T00:26:50.352Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0
+      },
+      {
+        "startedAt": "2026-07-17T00:26:25.692Z",
+        "finishedAt": "2026-07-17T00:26:27.267Z",
+        "total": 5,
+        "passed": 4,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-17T00:26:03.278Z",
+        "finishedAt": "2026-07-17T00:26:03.690Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0
+      }
+    ]
+  },
+  "ui": {
+    "tests": [
+      {
+        "name": "login_valid",
+        "status": "failed",
+        "durationMs": 66000,
+        "finishedAt": "2026-07-20T15:16:28.854Z",
+        "detail": "fail"
+      },
+      {
+        "name": "login_reject",
+        "status": "failed",
+        "durationMs": 22000,
+        "finishedAt": "2026-07-20T15:15:10.878Z",
+        "detail": "fail"
+      }
+    ],
+    "summary": {
+      "total": 2,
+      "passed": 0,
+      "failed": 2
+    },
+    "startedAt": "2026-07-20T15:14:36.084Z",
+    "finishedAt": "2026-07-20T15:16:28.867Z",
+    "exitCode": 1,
+    "history": [
+      {
+        "startedAt": "2026-07-20T15:14:36.084Z",
+        "finishedAt": "2026-07-20T15:16:28.867Z",
+        "total": 2,
+        "passed": 0,
+        "failed": 2,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-20T09:14:38.237Z",
+        "finishedAt": "2026-07-20T09:15:34.525Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-20T09:12:39.036Z",
+        "finishedAt": "2026-07-20T09:13:38.691Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-20T07:41:27.471Z",
+        "finishedAt": "2026-07-20T07:44:06.834Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-17T17:53:33.272Z",
+        "finishedAt": "2026-07-17T17:54:22.378Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-17T17:50:30.349Z",
+        "finishedAt": "2026-07-17T17:51:22.301Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-17T17:39:38.744Z",
+        "finishedAt": "2026-07-17T17:40:27.698Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-17T17:20:40.266Z",
+        "finishedAt": "2026-07-17T17:22:14.189Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0
+      }
+    ]
+  }
+}
