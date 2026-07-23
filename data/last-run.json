@@ -4,29 +4,29 @@
       {
         "name": "[LOGIN] đúng tài khoản",
         "status": "passed",
-        "durationMs": 24,
-        "finishedAt": "2026-07-20T14:59:46.947Z",
+        "durationMs": 20,
+        "finishedAt": "2026-07-22T03:09:09.679Z",
         "detail": null
       },
       {
         "name": "[LOGIN] sai tài khoản",
         "status": "passed",
-        "durationMs": 26,
-        "finishedAt": "2026-07-20T14:59:46.992Z",
+        "durationMs": 19,
+        "finishedAt": "2026-07-22T03:09:09.715Z",
         "detail": null
       },
       {
         "name": "[LOGIN] input rỗng",
         "status": "passed",
-        "durationMs": 25,
-        "finishedAt": "2026-07-20T14:59:47.038Z",
+        "durationMs": 20,
+        "finishedAt": "2026-07-22T03:09:09.751Z",
         "detail": null
       },
       {
         "name": "[LOGIN] network thất bại",
         "status": "passed",
-        "durationMs": 23,
-        "finishedAt": "2026-07-20T14:59:47.082Z",
+        "durationMs": 20,
+        "finishedAt": "2026-07-22T03:09:09.788Z",
         "detail": null
       }
     ],
@@ -35,10 +35,19 @@
       "passed": 4,
       "failed": 0
     },
-    "startedAt": "2026-07-20T14:59:45.930Z",
-    "finishedAt": "2026-07-20T14:59:47.083Z",
+    "startedAt": "2026-07-22T03:09:09.227Z",
+    "finishedAt": "2026-07-22T03:09:09.790Z",
     "exitCode": 0,
     "history": [
+      {
+        "startedAt": "2026-07-22T03:09:09.227Z",
+        "finishedAt": "2026-07-22T03:09:09.790Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "only": null
+      },
       {
         "startedAt": "2026-07-20T14:59:45.930Z",
         "finishedAt": "2026-07-20T14:59:47.083Z",
@@ -93,28 +102,121 @@
     "tests": [
       {
         "name": "login_valid",
-        "status": "failed",
-        "durationMs": 66000,
-        "finishedAt": "2026-07-20T15:16:28.854Z",
-        "detail": "fail"
+        "status": "passed",
+        "durationMs": 21000,
+        "finishedAt": "2026-07-22T03:10:45.175Z",
+        "detail": null
+      },
+      {
+        "name": "pin_valid_correct",
+        "status": "passed",
+        "durationMs": 22000,
+        "finishedAt": "2026-07-22T03:11:19.754Z",
+        "detail": null
+      },
+      {
+        "name": "pin_valid_wrong",
+        "status": "passed",
+        "durationMs": 23000,
+        "finishedAt": "2026-07-22T03:11:54.382Z",
+        "detail": null
       },
       {
         "name": "login_reject",
         "status": "failed",
-        "durationMs": 22000,
-        "finishedAt": "2026-07-20T15:15:10.878Z",
-        "detail": "fail"
+        "durationMs": 91000,
+        "finishedAt": "2026-07-22T03:10:11.478Z",
+        "detail": "timeout after 90s (app never wrote result)"
       }
     ],
     "summary": {
-      "total": 2,
-      "passed": 0,
-      "failed": 2
+      "total": 4,
+      "passed": 3,
+      "failed": 1
     },
-    "startedAt": "2026-07-20T15:14:36.084Z",
-    "finishedAt": "2026-07-20T15:16:28.867Z",
+    "startedAt": "2026-07-22T03:07:54.793Z",
+    "finishedAt": "2026-07-22T03:11:54.386Z",
     "exitCode": 1,
     "history": [
+      {
+        "startedAt": "2026-07-22T03:07:54.793Z",
+        "finishedAt": "2026-07-22T03:11:54.386Z",
+        "total": 4,
+        "passed": 3,
+        "failed": 1,
+        "exitCode": 1,
+        "only": null
+      },
+      {
+        "startedAt": "2026-07-21T10:35:29.049Z",
+        "finishedAt": "2026-07-21T10:39:07.735Z",
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "exitCode": 1,
+        "only": "scroll_zoom_valid"
+      },
+      {
+        "startedAt": "2026-07-21T10:27:11.617Z",
+        "finishedAt": "2026-07-21T10:30:52.919Z",
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "exitCode": 1,
+        "only": "scroll_zoom_valid"
+      },
+      {
+        "startedAt": "2026-07-20T16:25:12.663Z",
+        "finishedAt": "2026-07-20T16:26:13.685Z",
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "exitCode": 1,
+        "only": "pin_valid_wrong"
+      },
+      {
+        "startedAt": "2026-07-20T16:24:03.480Z",
+        "finishedAt": "2026-07-20T16:25:05.105Z",
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "exitCode": 1,
+        "only": "pin_valid_wrong"
+      },
+      {
+        "startedAt": "2026-07-20T16:23:19.834Z",
+        "finishedAt": "2026-07-20T16:23:50.937Z",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "exitCode": 0,
+        "only": "pin_valid_correct"
+      },
+      {
+        "startedAt": "2026-07-20T16:17:29.231Z",
+        "finishedAt": "2026-07-20T16:18:05.127Z",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "exitCode": 0,
+        "only": "pin_valid_correct"
+      },
+      {
+        "startedAt": "2026-07-20T15:34:04.814Z",
+        "finishedAt": "2026-07-20T15:35:41.944Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
+      {
+        "startedAt": "2026-07-20T15:28:36.332Z",
+        "finishedAt": "2026-07-20T15:29:49.205Z",
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "exitCode": 1
+      },
       {
         "startedAt": "2026-07-20T15:14:36.084Z",
         "finishedAt": "2026-07-20T15:16:28.867Z",

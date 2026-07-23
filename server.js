@@ -102,7 +102,8 @@ function handleMarker(k, parts) {
     // The script has finished discovery once the run phase starts: drop cases that
     // no longer exist (e.g. renamed accounts.ini labels) and match the script's order,
     // so the table stays in sync with what run-all-*.sh will actually execute.
-    if (s.phase === 'run' && s.listed && s.listed.size) {
+    // Skipped on a PARTIAL run (only a subset was listed — keep the rest of the board).
+    if (s.phase === 'run' && !s.partial && s.listed && s.listed.size) {
       const byName = new Map(s.tests.map(t => [t.name, t]));
       s.tests = [...s.listed].map(name => byName.get(name)).filter(Boolean);
       broadcast('tests', { suite: k, tests: s.tests });
@@ -128,24 +129,56 @@ function handleMarker(k, parts) {
       broadcast('test', { suite: k, test: t });
     }
   } else if (tag === '##SUMMARY') {
-    s.summary = { total: Number(parts[1]), passed: Number(parts[2]), failed: Number(parts[3]) };
-    broadcast('summary', { suite: k, summary: s.summary });
+    // On a partial run the script's summary covers only the subset — ignore it for the board-wide
+    // summary (recomputed at run-end from the whole tests[] instead).
+    if (!s.partial) {
+      s.summary = { total: Number(parts[1]), passed: Number(parts[2]), failed: Number(parts[3]) };
+      broadcast('summary', { suite: k, summary: s.summary });
+    }
   }
 }
 
-function startRun(k) {
+// Summarise the board (or a named subset of it) from current test statuses.
+function summaryOver(s, names) {
+  const set = names ? new Set(names) : null;
+  let total = 0, passed = 0, failed = 0;
+  for (const t of s.tests) {
+    if (set && !set.has(t.name)) continue;
+    total++;
+    if (t.status === 'passed') passed++;
+    else if (t.status === 'failed') failed++;
+  }
+  return { total, passed, failed };
+}
+
+function startRun(k, opts) {
+  opts = opts || {};
   const s = states[k];
   if (!SUITES[k]) return { ok: false, error: `Unknown suite: ${k}` };
   if (s.status === 'running') return { ok: false, error: 'A run is already in progress' };
   if (!fs.existsSync(SUITES[k].script)) return { ok: false, error: `Script not found: ${SUITES[k].script}` };
 
+  const only = (Array.isArray(opts.only) ? opts.only.filter(Boolean) : []);
+  const partial = only.length > 0;   // run just a subset of cases (per-case ▶ / PIN controls)
+
   Object.assign(s, { status: 'running', phase: 'configure', startedAt: new Date().toISOString(),
                      finishedAt: null, exitCode: null, error: null, log: [],
-                     summary: null, listed: new Set() });
-  s.tests.forEach(t => { t.status = 'pending'; t.durationMs = null; t.detail = null; });
+                     listed: new Set(), partial, runOnly: partial ? only : null });
+  if (partial) {
+    // Reset ONLY the targeted cases; leave the rest of the board (and the summary) untouched.
+    const target = new Set(only);
+    s.tests.forEach(t => { if (target.has(t.name)) { t.status = 'pending'; t.durationMs = null; t.detail = null; } });
+  } else {
+    s.summary = null;
+    s.tests.forEach(t => { t.status = 'pending'; t.durationMs = null; t.detail = null; });
+  }
   broadcast('run-start', publicState(k));
 
-  s.child = spawn('bash', [SUITES[k].script, ...SUITES[k].args], { cwd: MOBILE_REPO });
+  const env = { ...process.env };
+  if (partial) env.ND_UITEST_ONLY = only.join(',');       // only the ui script reads these; harmless for unit
+  if (opts.pin) env.ND_UITEST_PIN_OVERRIDE = String(opts.pin);
+
+  s.child = spawn('bash', [SUITES[k].script, ...SUITES[k].args], { cwd: MOBILE_REPO, env });
   let buf = '';
   const onChunk = (chunk) => {
     buf += chunk.toString('utf8'); let idx;
@@ -162,11 +195,17 @@ function startRun(k) {
     if (code !== 0 && code !== 1) {
       s.phase = 'error';
       s.error = `${path.basename(SUITES[k].script)} exited with code ${code} (setup/build error)`;
-      s.tests.forEach(t => { if (t.status === 'pending' || t.status === 'running') t.status = 'failed'; });
+      // fail only the cases that were part of THIS run (all, or the targeted subset on a partial run)
+      s.tests.forEach(t => {
+        if ((t.status === 'pending' || t.status === 'running') &&
+            (!s.partial || (s.runOnly && s.runOnly.includes(t.name)))) t.status = 'failed';
+      });
     } else { s.phase = 'done'; }
+    s.summary = summaryOver(s, null);                              // board-wide (authoritative)
+    const runSum = s.partial ? summaryOver(s, s.runOnly) : s.summary;   // what THIS run did
     s.history.unshift({ startedAt: s.startedAt, finishedAt: s.finishedAt,
-      total: s.summary ? s.summary.total : s.tests.length,
-      passed: s.summary ? s.summary.passed : 0, failed: s.summary ? s.summary.failed : 0, exitCode: code });
+      total: runSum.total, passed: runSum.passed, failed: runSum.failed, exitCode: code,
+      only: s.partial ? (s.runOnly || []).join(', ') : null });
     if (s.history.length > MAX_HISTORY) s.history.length = MAX_HISTORY;
     s.child = null; persist(); broadcast('run-end', publicState(k));
   });
@@ -186,10 +225,46 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ ...publicState(suite), log: states[suite].log }));
     return;
   }
+  if (url.pathname === '/api/cases') {
+    // Fast case discovery (no build) so the dashboard can show cases — incl. PIN cases — before any run.
+    // Only the ui script supports --list; unit cases need a build, so return none there.
+    if (suite !== 'ui' || !fs.existsSync(SUITES[suite].script)) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ cases: [] })); return;
+    }
+    const p = spawn('bash', [SUITES[suite].script, '--list'], { cwd: MOBILE_REPO });
+    let out = '';
+    p.stdout.on('data', d => { out += d; });
+    p.on('close', () => {
+      const cases = out.split('\n').map(s => s.trim()).filter(s => /^[A-Za-z0-9_]+$/.test(s));
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ cases }));
+    });
+    p.on('error', () => { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ cases: [] })); });
+    return;
+  }
   if (url.pathname === '/api/run' && req.method === 'POST') {
-    const r = startRun(suite);
-    res.writeHead(r.ok ? 202 : 409, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(r));
+    let body = '';
+    req.on('data', c => { body += c; if (body.length > 10000) req.destroy(); });
+    req.on('end', () => {
+      const send = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(obj)); };
+      let opts = {};
+      try { if (body.trim()) opts = JSON.parse(body); } catch { return send(400, { ok: false, error: 'bad JSON body' }); }
+      // query-param fallback: ?only=a,b&pin=1234
+      const qOnly = url.searchParams.get('only'); if (qOnly && opts.only == null) opts.only = qOnly.split(',');
+      const qPin = url.searchParams.get('pin');   if (qPin && opts.pin == null) opts.pin = qPin;
+
+      let only = null;
+      if (opts.only != null) {
+        only = (Array.isArray(opts.only) ? opts.only : String(opts.only).split(',')).map(x => String(x).trim()).filter(Boolean);
+        if (!only.every(n => /^[A-Za-z0-9_]+$/.test(n))) return send(400, { ok: false, error: 'invalid case name in "only"' });
+      }
+      let pin = null;
+      if (opts.pin != null && opts.pin !== '') {
+        pin = String(opts.pin);
+        if (!/^[0-9]{1,8}$/.test(pin)) return send(400, { ok: false, error: 'PIN must be 1–8 digits' });
+      }
+      const r = startRun(suite, { only, pin });
+      send(r.ok ? 202 : 409, r);
+    });
     return;
   }
   if (url.pathname === '/api/events') {
@@ -211,8 +286,34 @@ const server = http.createServer((req, res) => {
   });
 });
 
+// Seed the ui board with discoverable cases (incl. PIN cases) so they show — and persist — before the
+// first run, keeping per-case ▶ / PIN controls usable and stable across runs. Fast (no build).
+function seedCases(k) {
+  if (k !== 'ui' || !fs.existsSync(SUITES[k].script)) return;
+  const p = spawn('bash', [SUITES[k].script, '--list'], { cwd: MOBILE_REPO });
+  let out = '';
+  p.stdout.on('data', d => { out += d; });
+  p.on('close', () => {
+    const s = states[k];
+    if (s.status === 'running') return;   // don't disturb a live run
+    const names = out.split('\n').map(x => x.trim()).filter(x => /^[A-Za-z0-9_]+$/.test(x));
+    if (!names.length) return;            // discovery failed (accounts unreadable) — keep board as-is
+    // Reconcile the board to the discoverable set, in its order: keep results for cases that still
+    // exist, add new ones as pending, drop cases no longer generated (e.g. removed login-success /
+    // pin-correct). Mirrors the prune-on-run behaviour so the board matches `--list`.
+    const byName = new Map(s.tests.map(t => [t.name, t]));
+    s.tests = names.map(name => byName.get(name) || { name, status: 'pending', durationMs: null, finishedAt: null, detail: null });
+    s.summary = summaryOver(s, null);
+    persist();
+    broadcast('tests', { suite: k, tests: s.tests });
+    broadcast('summary', { suite: k, summary: s.summary });
+  });
+  p.on('error', () => { /* discovery is best-effort */ });
+}
+
 loadPersisted();
 server.listen(PORT, () => {
-  console.log(`9d-cicd test dashboard → http://localhost:${PORT}`);
+  console.log(`9d test dashboard → http://localhost:${PORT}`);
   console.log(`9d-mobile repo: ${MOBILE_REPO}`);
+  seedCases('ui');
 });

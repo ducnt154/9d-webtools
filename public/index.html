@@ -88,7 +88,22 @@
 
   #history td { color: var(--muted); font-size: 13px; }
   #history .ok { color: var(--green); } #history .bad { color: var(--red); }
+  #history .only { color: var(--muted); font-style: italic; }
   .empty { padding: 24px 16px; color: var(--muted); text-align: center; }
+
+  td.act, th.act { text-align: right; white-space: nowrap; width: 1%; }
+  .run-one { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 6px;
+             padding: 3px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .run-one:hover:not(:disabled) { border-color: var(--accent); color: #fff; }
+  .run-one:disabled { opacity: .4; cursor: not-allowed; }
+
+  .pinbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px;
+            background: var(--panel2); border-bottom: 1px solid var(--border); font-size: 13px; }
+  .pinbar label { color: var(--muted); font-weight: 600; }
+  .pinbar input { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px;
+                  padding: 5px 10px; width: 200px; font: 13px ui-monospace, Menlo, monospace; letter-spacing: 2px; }
+  .pinbar .hint { color: var(--muted); font-size: 12px; }
+  .pinbar.busy input, .pinbar.busy button { opacity: .45; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -119,9 +134,16 @@
       <span class="meta" id="lastRun"></span>
     </div>
     <div class="statusline" id="statusline"></div>
+    <div class="pinbar" id="pinBar" style="display:none">
+      <label>Mã PIN:</label>
+      <input id="pinInput" type="text" inputmode="numeric" maxlength="8" placeholder="để trống = PIN trong accounts.ini">
+      <button class="run-one" onclick="runPin('wrong')">▶ Test PIN sai</button>
+      <button class="run-one" onclick="runGameplay()">▶ Vào game + zoom</button>
+      <span class="hint">“PIN sai”: gõ mã này, kỳ vọng server từ chối. “Vào game + zoom”: dùng mã này làm PIN đăng nhập vào thế giới rồi test scroll zoom (đã bao gồm login + PIN đúng). Trống = PIN mặc định của account.</span>
+    </div>
     <table>
-      <thead><tr><th>Test case</th><th>Trạng thái</th><th class="dur">Thời gian</th></tr></thead>
-      <tbody id="testBody"><tr><td colspan="3" class="empty">Chưa có dữ liệu — bấm “Chạy”.</td></tr></tbody>
+      <thead><tr><th>Test case</th><th>Trạng thái</th><th class="dur">Thời gian</th><th class="act"></th></tr></thead>
+      <tbody id="testBody"><tr><td colspan="4" class="empty">Chưa có dữ liệu — bấm “Chạy”.</td></tr></tbody>
     </table>
   </div>
 
@@ -162,7 +184,20 @@ function fmtTime(iso) { return iso ? new Date(iso).toLocaleString('vi-VN') : '';
 function fmtDur(ms) { return ms == null ? '' : (ms >= 1000 ? (ms/1000).toFixed(1) + 's' : ms + 'ms'); }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-function setActive(k) { active = k; $('log').textContent = (ST[k].log || []).join('\n') + '\n'; render(); }
+function setActive(k) { active = k; $('log').textContent = (ST[k].log || []).join('\n') + '\n'; render(); if (k === 'ui') seedUiCases(); }
+
+// Show UI cases (incl. PIN cases) before any run has populated the board, so the per-case ▶ and PIN
+// buttons work immediately. Merges discovered names as "pending" without touching existing results.
+async function seedUiCases() {
+  try {
+    const { cases } = await (await fetch('/api/cases?suite=ui')).json();
+    if (ST.ui.status === 'running') return;
+    const have = new Set((ST.ui.tests || []).map(t => t.name));
+    let added = false;
+    for (const name of cases || []) if (!have.has(name)) { (ST.ui.tests = ST.ui.tests || []).push({ name, status: 'pending', durationMs: null, detail: null }); added = true; }
+    if (added && active === 'ui') render();
+  } catch { /* discovery is best-effort */ }
+}
 
 function renderTabs() {
   for (const k of SUITES) {
@@ -186,16 +221,22 @@ function render() {
   $('cFailed').textContent = counts.failed;
   $('cRunning').textContent = counts.running + (counts.pending ? ` (+${counts.pending} chờ)` : '');
 
+  const running = S.status === 'running';
   const body = $('testBody');
   body.innerHTML = t.length ? t.map(x => `
     <tr class="${x.status}">
       <td>${esc(x.name)}${x.status === 'failed' && x.detail ? `<div class="detail">${esc(x.detail)}</div>` : ''}</td>
       <td><span class="badge ${x.status}"><span class="dot"></span>${STATUS_VI[x.status] || x.status}</span></td>
       <td class="dur">${fmtDur(x.durationMs)}</td>
+      <td class="act"><button class="run-one" ${running ? 'disabled' : ''} title="Chạy riêng case này"
+          onclick="runCase(['${esc(x.name)}'])">▶</button></td>
     </tr>`).join('')
-    : '<tr><td colspan="3" class="empty">Chưa có dữ liệu — bấm “Chạy”.</td></tr>';
+    : '<tr><td colspan="4" class="empty">Chưa có dữ liệu — bấm “Chạy”.</td></tr>';
 
-  const running = S.status === 'running';
+  // PIN control: only on the UI suite tab.
+  $('pinBar').style.display = active === 'ui' ? 'flex' : 'none';
+  $('pinBar').classList.toggle('busy', running);
+
   $('runBtn').disabled = running;
   $('runBtn').classList.toggle('running', running);
   $('runLabel').textContent = running ? 'Đang chạy…' : RUN_LABEL[active];
@@ -213,7 +254,8 @@ function render() {
     const dur = r.startedAt && r.finishedAt ? fmtDur(new Date(r.finishedAt) - new Date(r.startedAt)) : '';
     const cls = r.failed === 0 && (r.exitCode === 0) ? 'ok' : 'bad';
     const label = r.exitCode === 0 || r.exitCode === 1 ? `${r.passed}/${r.total} passed${r.failed ? `, ${r.failed} failed` : ''}` : 'lỗi build/setup';
-    return `<tr><td>${fmtTime(r.startedAt)}</td><td class="${cls}">${label}</td><td class="dur">${dur}</td></tr>`;
+    const only = r.only ? ` <span class="only">(${esc(r.only)})</span>` : '';
+    return `<tr><td>${fmtTime(r.startedAt)}</td><td class="${cls}">${label}${only}</td><td class="dur">${dur}</td></tr>`;
   }).join('') : '<tr><td colspan="3" class="empty">Chưa có lần chạy nào.</td></tr>';
 }
 
@@ -226,10 +268,44 @@ function appendLog(k, line) {
   log.scrollTop = log.scrollHeight;
 }
 
-async function runTests() {
-  ST[active].log = []; $('log').textContent = '';
-  const r = await fetch('/api/run?suite=' + active, { method: 'POST' });
+async function post(body) {
+  const r = await fetch('/api/run?suite=' + active, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}),
+  });
   if (!r.ok) { const j = await r.json().catch(() => ({})); alert(j.error || 'Không thể bắt đầu chạy test'); }
+}
+
+// Full suite run.
+async function runTests() { ST[active].log = []; $('log').textContent = ''; post({}); }
+
+// Run just the given case(s). The PIN input (if filled) is sent for any case that needs a PIN — the
+// wrong-PIN case and the gameplay case (which uses it as the login PIN). login_* cases ignore it.
+async function runCase(only) {
+  const pinEl = $('pinInput');
+  const usesPin = only.some(n => !n.startsWith('login_'));
+  const pin = usesPin && pinEl && pinEl.value.trim() ? pinEl.value.trim() : undefined;
+  post(pin ? { only, pin } : { only });
+}
+
+async function findCase(re) {
+  const find = () => (ST.ui.tests || []).map(t => t.name).find(n => re.test(n));
+  let name = find();
+  if (!name) { await seedUiCases(); name = find(); }
+  return name;
+}
+
+// PIN panel: run the wrong-PIN case with the entered PIN (expect the server to reject it).
+async function runPin(kind) {
+  const name = await findCase(new RegExp('^pin_.*_' + kind + '$'));
+  if (!name) { alert('Không tìm thấy case PIN. Thêm account có cột PIN (cột 5) vào tests/ui/accounts.ini rồi thử lại.'); return; }
+  runCase([name]);
+}
+
+// Gameplay: enter the world with the entered PIN, then test scroll-wheel zoom (covers login + PIN đúng).
+async function runGameplay() {
+  const name = await findCase(/^scroll_zoom_/);
+  if (!name) { alert('Không tìm thấy case gameplay. Cần account expect=success trong tests/ui/accounts.ini.'); return; }
+  runCase([name]);
 }
 
 const es = new EventSource('/api/events');
@@ -238,6 +314,7 @@ es.addEventListener('state', e => {
   for (const k of SUITES) if (d.suites[k]) ST[k] = d.suites[k];
   $('log').textContent = (ST[active].log || []).join('\n') + '\n';
   render();
+  seedUiCases();
 });
 function upd(e, fn) { const d = JSON.parse(e.data); const k = d.suite; if (!ST[k]) return; fn(ST[k], d); if (k === active) render(); else renderTabs(); }
 es.addEventListener('run-start', e => upd(e, (S, d) => Object.assign(ST[d.suite], d)));
