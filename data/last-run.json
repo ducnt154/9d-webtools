@@ -101,43 +101,70 @@
   "ui": {
     "tests": [
       {
-        "name": "login_valid",
-        "status": "passed",
-        "durationMs": 21000,
-        "finishedAt": "2026-07-22T03:10:45.175Z",
-        "detail": null
-      },
-      {
-        "name": "pin_valid_correct",
+        "name": "login_reject",
         "status": "passed",
         "durationMs": 22000,
-        "finishedAt": "2026-07-22T03:11:19.754Z",
+        "finishedAt": "2026-07-23T08:17:44.531Z",
         "detail": null
       },
       {
         "name": "pin_valid_wrong",
         "status": "passed",
         "durationMs": 23000,
-        "finishedAt": "2026-07-22T03:11:54.382Z",
+        "finishedAt": "2026-07-23T08:18:20.084Z",
         "detail": null
       },
       {
-        "name": "login_reject",
-        "status": "failed",
-        "durationMs": 91000,
-        "finishedAt": "2026-07-22T03:10:11.478Z",
-        "detail": "timeout after 90s (app never wrote result)"
+        "name": "scroll_zoom_valid",
+        "status": "passed",
+        "durationMs": 31000,
+        "finishedAt": "2026-07-23T08:19:03.699Z",
+        "detail": null
+      },
+      {
+        "name": "actionbar_valid",
+        "status": "passed",
+        "durationMs": 44000,
+        "finishedAt": "2026-07-23T08:19:59.405Z",
+        "detail": null
       }
     ],
     "summary": {
       "total": 4,
-      "passed": 3,
-      "failed": 1
+      "passed": 4,
+      "failed": 0
     },
-    "startedAt": "2026-07-22T03:07:54.793Z",
-    "finishedAt": "2026-07-22T03:11:54.386Z",
-    "exitCode": 1,
+    "startedAt": "2026-07-23T08:17:18.174Z",
+    "finishedAt": "2026-07-23T08:19:59.408Z",
+    "exitCode": 0,
     "history": [
+      {
+        "startedAt": "2026-07-23T08:17:18.174Z",
+        "finishedAt": "2026-07-23T08:19:59.408Z",
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "exitCode": 0,
+        "only": null
+      },
+      {
+        "startedAt": "2026-07-23T08:13:35.303Z",
+        "finishedAt": "2026-07-23T08:14:21.688Z",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "exitCode": 0,
+        "only": "actionbar_valid"
+      },
+      {
+        "startedAt": "2026-07-23T08:10:34.767Z",
+        "finishedAt": "2026-07-23T08:11:23.449Z",
+        "total": 1,
+        "passed": 0,
+        "failed": 1,
+        "exitCode": 1,
+        "only": "actionbar_valid"
+      },
       {
         "startedAt": "2026-07-22T03:07:54.793Z",
         "finishedAt": "2026-07-22T03:11:54.386Z",

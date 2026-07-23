@@ -23,6 +23,9 @@ PORT=8080 MOBILE_REPO=/path/to/9d-mobile node server.js
   - Để trống ô → dùng PIN mặc định của account trong `accounts.ini`.
 - Bảng trạng thái từng test case, cập nhật **live** qua Server-Sent Events:
   🟢 passed · 🔴 failed · 🟡 đang chạy · xám chờ chạy. Case UI (kể cả PIN) hiện sẵn trước cả lần chạy đầu.
+- Case UI sắp xếp & chạy theo thứ tự **từ ngoài vào trong** (đúng thứ tự người chơi gặp màn hình):
+  `login_*` (màn đăng nhập) → `pin_*_wrong` (numpad mã PIN) → `scroll_zoom_*` (camera trong game)
+  → `actionbar_*` (mobile action bar trong game — nút ATK / F-circles / Fight / LOCK / NEXT / AP, sâu nhất).
 - Thẻ tổng hợp (tổng/passed/failed/đang chạy), panel log, lịch sử (lưu `data/last-run.json`, tối đa 30 lần;
   lần chạy 1 case ghi kèm tên case trong cột kết quả).
 
@@ -44,8 +47,11 @@ Cả 2 script in marker tab-separated trên stdout (`##PHASE / ##TC_LIST / ##TC_
 - **Partial run** (`only`): server truyền `ND_UITEST_ONLY=<case,…>` cho `run-all-uitest.sh`; script chỉ
   liệt kê/chạy đúng các case đó. Dashboard **không xoá** các case khác trên bảng, summary tính lại toàn bảng.
 - **PIN override** (`pin`): server truyền `ND_UITEST_PIN_OVERRIDE=<digits>` → app gõ đúng mã đó ở màn PIN.
-- Case PIN được sinh từ `9d-mobile/tests/ui/accounts.ini`: dòng `expect=success` có cột PIN (cột 5) →
-  `pin_<label>_correct` + `pin_<label>_wrong`. Đúng/sai **do server game quyết** (`MSG_NO_SECONDARY_PW_CHECK`),
-  test chỉ quan sát game-state. Xem `9d-mobile/tests/ui/README.md`.
+- Case UI được sinh từ `9d-mobile/tests/ui/accounts.ini` và trả về theo thứ tự từ ngoài vào trong:
+  dòng `expect!=success` → `login_<label>`; dòng `expect=success` có cột PIN (cột 5) → `pin_<label>_wrong`
+  (đúng/sai **do server game quyết** — `MSG_NO_SECONDARY_PW_CHECK`, test chỉ quan sát game-state);
+  dòng `expect=success` → `scroll_zoom_<label>` + `actionbar_<label>` (gameplay, vào thế giới thật;
+  actionbar test nút ATK / F-circles / Fight / LOCK / NEXT / AP của mobile action bar).
+  Xem `9d-mobile/tests/ui/README.md`.
 
 Unit harness ở `9d-mobile/tests/` (doctest). Thêm test mới không cần sửa server — dashboard tự nhận ở lần chạy kế tiếp.

@@ -5,7 +5,7 @@
       "name": "9d-web-dashboard",
       "runtimeExecutable": "node",
       "runtimeArgs": ["server.js"],
-      "cwd": "/Users/duc.nguyen/Documents/Tepaylink/9D/9d-web",
+      "cwd": "/Users/ducnguyenai/Documents/Projects/9D/9d-web",
       "port": 4909
     }
   ]

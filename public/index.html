@@ -139,7 +139,8 @@
       <input id="pinInput" type="text" inputmode="numeric" maxlength="8" placeholder="để trống = PIN trong accounts.ini">
       <button class="run-one" onclick="runPin('wrong')">▶ Test PIN sai</button>
       <button class="run-one" onclick="runGameplay()">▶ Vào game + zoom</button>
-      <span class="hint">“PIN sai”: gõ mã này, kỳ vọng server từ chối. “Vào game + zoom”: dùng mã này làm PIN đăng nhập vào thế giới rồi test scroll zoom (đã bao gồm login + PIN đúng). Trống = PIN mặc định của account.</span>
+      <button class="run-one" onclick="runActionBar()">▶ Test action bar</button>
+      <span class="hint">“PIN sai”: gõ mã này, kỳ vọng server từ chối. “Vào game + zoom”: dùng mã này làm PIN đăng nhập vào thế giới rồi test scroll zoom (đã bao gồm login + PIN đúng). “Test action bar”: vào thế giới rồi bấm các nút mobile action bar (ATK / F-circles / Fight / LOCK / NEXT / AP) qua đường hit-test thật. Trống = PIN mặc định của account.</span>
     </div>
     <table>
       <thead><tr><th>Test case</th><th>Trạng thái</th><th class="dur">Thời gian</th><th class="act"></th></tr></thead>
@@ -187,15 +188,20 @@ function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&l
 function setActive(k) { active = k; $('log').textContent = (ST[k].log || []).join('\n') + '\n'; render(); if (k === 'ui') seedUiCases(); }
 
 // Show UI cases (incl. PIN cases) before any run has populated the board, so the per-case ▶ and PIN
-// buttons work immediately. Merges discovered names as "pending" without touching existing results.
+// buttons work immediately. Reconciles the board to the discovered list IN ITS ORDER (outside-in:
+// login → PIN → scroll → actionbar), keeping existing results — mirrors the server-side seed.
 async function seedUiCases() {
   try {
     const { cases } = await (await fetch('/api/cases?suite=ui')).json();
-    if (ST.ui.status === 'running') return;
-    const have = new Set((ST.ui.tests || []).map(t => t.name));
-    let added = false;
-    for (const name of cases || []) if (!have.has(name)) { (ST.ui.tests = ST.ui.tests || []).push({ name, status: 'pending', durationMs: null, detail: null }); added = true; }
-    if (added && active === 'ui') render();
+    if (ST.ui.status === 'running' || !(cases || []).length) return;
+    const byName = new Map((ST.ui.tests || []).map(t => [t.name, t]));
+    const next = cases.map(name => byName.get(name) || { name, status: 'pending', durationMs: null, detail: null });
+    // extras not in the discovered list (e.g. a partial-run leftover) stay, at the end
+    for (const t of ST.ui.tests || []) if (!cases.includes(t.name)) next.push(t);
+    const changed = (ST.ui.tests || []).length !== next.length ||
+                    next.some((t, i) => (ST.ui.tests || [])[i] !== t);
+    ST.ui.tests = next;
+    if (changed && active === 'ui') render();
   } catch { /* discovery is best-effort */ }
 }
 
@@ -305,6 +311,14 @@ async function runPin(kind) {
 async function runGameplay() {
   const name = await findCase(/^scroll_zoom_/);
   if (!name) { alert('Không tìm thấy case gameplay. Cần account expect=success trong tests/ui/accounts.ini.'); return; }
+  runCase([name]);
+}
+
+// Gameplay: enter the world, then press the mobile action bar buttons (ATK / F-circles / Fight /
+// LOCK / NEXT / AP) through the real hit-test path and assert on real game state.
+async function runActionBar() {
+  const name = await findCase(/^actionbar_/);
+  if (!name) { alert('Không tìm thấy case action bar. Cần account expect=success trong tests/ui/accounts.ini.'); return; }
   runCase([name]);
 }
 
